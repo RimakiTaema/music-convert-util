@@ -1,5 +1,12 @@
 @echo off
-pip install -r requirements.txt
-Invoke-WebRequest -Uri "https://github.com/Nuitka/DependnecyWalker/releases/latest/download/depends.exe" -OutFile "$env:TEMP\depends.exe"
-         New-Item -ItemType Directory -Path "$env:LocalAppData\Nuitka\Nuitka\Cache\downloads\depends\x86_64" -Force
-mv build/convert.exe build/convmusic.exe
+setlocal enabledelayedexpansion
+
+:: Ensure dependencies are installed
+python -m pip install --upgrade pip
+python -m pip install nuitka
+
+:: Compile the Python script
+python -m nuitka --standalone --onefile --disable-ccache --no-dependency-walker --output-dir=build convert.py
+
+:: Rename output file
+move build\convert.exe build\convmusic.exe
