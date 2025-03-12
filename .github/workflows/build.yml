@@ -43,7 +43,7 @@ jobs:
           rename build\my_script.exe my_script.exe
 
       - name: Upload Executable Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: compiled-program-${{ matrix.os }}
           path: build/my_script*
