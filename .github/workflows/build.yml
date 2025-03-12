@@ -1,14 +1,3 @@
-name: Build and Release convmusic
-
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
-  workflow_dispatch:  # This will allow manual trigger
-
 jobs:
   build:
     runs-on: ${{ matrix.os }}
@@ -35,58 +24,35 @@ jobs:
             nuitka-version: main
             script-name: convert.py
 
-      - name: Rename Executable (Linux/macOS)
-        if: runner.os == 'Linux' || runner.os == 'macOS'
+      # Rename and upload artifacts based on OS
+      - name: Rename and upload macOS Executable
+        if: runner.os == 'macOS'
         run: |
-          if [ $RUNNER_OS == "macOS" ]; then
-            mv build/convert.app/Contents/MacOS/convert build/convert.app/Contents/MacOS/convmusic
-          else
-            mv build/convert.bin build/convmusic
-          fi
-
-      - name: Rename Executable (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          rename build\convert.exe convmusic.exe
-
-      - name: Upload Executable Artifact
+          mv build/convert.app/Contents/MacOS/convert build/convert.app/Contents/MacOS/convmusic
         uses: actions/upload-artifact@v4
         with:
-          name: convmusic-${{ runner.os }}-${{ matrix.architecture }}
-          path: build/convmusic*
+          name: convmusic-macos-${{ matrix.architecture }}
+          path: build/convmusic.app
           if-no-files-found: error
 
-  manual_build:
-    runs-on: ${{ matrix.os }}
-    needs: build
-    if: github.event_name == 'workflow_dispatch'  # This ensures that the manual build only runs on manual trigger
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.11"
-
-      - name: Install Nuitka
+      - name: Rename and upload Linux Executable
+        if: runner.os == 'Linux'
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install nuitka
-
-      - name: Run Manual Build Script
-        run: |
-          if [ $RUNNER_OS == "Linux" ]; then
-            chmod +x build.sh && ./build.sh  # Linux/Mac
-          elif [ $RUNNER_OS == "Windows" ]; then
-            ./build.bat  # Windows
-          fi
-
-      - name: Upload Executable Artifact (Manual)
+          mv build/convert.bin build/convmusic
         uses: actions/upload-artifact@v4
         with:
-          name: manual-convmusic-${{ runner.os }}-${{ matrix.architecture }}
-          path: build/convmusic*
+          name: convmusic-linux-${{ matrix.architecture }}
+          path: build/convmusic
+          if-no-files-found: error
+
+      - name: Rename and upload Windows Executable
+        if: runner.os == 'Windows'
+        run: |
+          mv build/convert.exe build/convmusic.exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: convmusic-windows-${{ matrix.architecture }}
+          path: build/convmusic.exe
           if-no-files-found: error
 
   release:
