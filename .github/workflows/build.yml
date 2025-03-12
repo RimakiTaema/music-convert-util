@@ -46,7 +46,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: convmusic-macos-${{ matrix.architecture }}
-          path: build/convmusic.app
+          path: build/convert.app/Contents/MacOS/convmusic*
           if-no-files-found: error
 
       # Linux Rename and upload
