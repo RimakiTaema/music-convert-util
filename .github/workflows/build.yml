@@ -34,13 +34,6 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install nuitka
 
-      - name: Download Dependency Walker (Windows Only)
-        if: runner.os == 'Windows'
-        run: |
-          Invoke-WebRequest -Uri "https://github.com/Nuitka/DependnecyWalker/releases/latest/download/depends.exe" -OutFile "$env:TEMP\depends.exe"
-          New-Item -ItemType Directory -Path "$env:LocalAppData\Nuitka\Nuitka\Cache\downloads\depends\x86_64" -Force
-          Move-Item -Path "$env:TEMP\depends.exe" -Destination "$env:LocalAppData\Nuitka\Nuitka\Cache\downloads\depends\x86_64\depends.exe"
-
       - name: Build on Linux/macOS
         if: runner.os != 'Windows'
         run: chmod +x build.sh && ./build.sh
