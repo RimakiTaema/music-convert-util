@@ -40,7 +40,18 @@ jobs:
 
       - name: Build on Windows
         if: runner.os == 'Windows'
-        run: .\build.bat
+        run: |
+          # Download Dependency Walker
+          Invoke-WebRequest -Uri "https://dependencywalker.com/depends22_x64.zip" -OutFile "$env:TEMP\depends22_x64.zip"
+          
+          # Extract Dependency Walker
+          Expand-Archive -Path "$env:TEMP\depends22_x64.zip" -DestinationPath "$env:TEMP\DependencyWalker"
+
+          # Run the build.bat script
+          .\build.bat
+
+          # Optionally run Dependency Walker (depends.exe) to analyze the dependencies of the output executable
+          & "$env:TEMP\DependencyWalker\depends.exe" "$env:CI_WORKSPACE\build\convmusic.exe" 
 
       - name: Upload Executable Artifact
         uses: actions/upload-artifact@v4
