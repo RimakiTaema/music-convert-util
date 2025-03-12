@@ -35,46 +35,49 @@ jobs:
             nuitka-version: main
             script-name: convert.py
 
-      # macOS Rename and Upload
+      # macOS Rename, Archive, and Upload
       - name: Rename macOS Executable
         if: runner.os == 'macOS'
         run: |
           mv build/convert.app/Contents/MacOS/convert build/convert.app/Contents/MacOS/convmusic
+          tar -czvf convmusic-macos-${{ matrix.architecture }}.tar.gz -C build convert.app
 
-      - name: Upload macOS Executable
+      - name: Upload macOS Archive
         if: runner.os == 'macOS'
         uses: actions/upload-artifact@v4
         with:
           name: convmusic-macos-${{ matrix.architecture }}
-          path: build/convert.app/Contents/MacOS/convmusic
+          path: convmusic-macos-${{ matrix.architecture }}.tar.gz
           if-no-files-found: error
 
-      # Linux Rename and Upload
+      # Linux Rename, Archive, and Upload
       - name: Rename Linux Executable
         if: runner.os == 'Linux'
         run: |
           mv build/convert.bin build/convmusic
+          tar -czvf convmusic-linux-${{ matrix.architecture }}.tar.gz -C build convmusic
 
-      - name: Upload Linux Executable
+      - name: Upload Linux Archive
         if: runner.os == 'Linux'
         uses: actions/upload-artifact@v4
         with:
           name: convmusic-linux-${{ matrix.architecture }}
-          path: build/convmusic
+          path: convmusic-linux-${{ matrix.architecture }}.tar.gz
           if-no-files-found: error
 
-      # Windows Rename and Upload
+      # Windows Rename, Archive, and Upload
       - name: Rename Windows Executable
         if: runner.os == 'Windows'
         run: |
           mv build/convert.exe build/convmusic.exe
+          tar -czvf convmusic-windows-${{ matrix.architecture }}.tar.gz -C build convmusic.exe
 
-      - name: Upload Windows Executable
+      - name: Upload Windows Archive
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4
         with:
           name: convmusic-windows-${{ matrix.architecture }}
-          path: build/convmusic.exe
+          path: convmusic-windows-${{ matrix.architecture }}.tar.gz
           if-no-files-found: error
 
   release:
@@ -92,8 +95,8 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: v1.0.${{ github.run_number }}
-          name: 1.0.${{ github.run_number }}  # Corrected key
-          files: artifacts/**/*
-          generate_release_notes: true  # Let GitHub auto-generate release notes
+          name: 1.0.${{ github.run_number }}
+          files: artifacts/**/*.tar.gz  # Only upload archives
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
