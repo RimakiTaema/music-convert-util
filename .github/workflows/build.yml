@@ -34,35 +34,51 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install nuitka
 
-      - name: Download and Extract Dependency Walker (Windows only)
-        if: runner.os == 'Windows'
-        run: |
-          echo "Downloading Dependency Walker..."
-          Invoke-WebRequest -Uri "https://dependencywalker.com/depends22_x64.zip" -OutFile "depends22_x64.zip"
-          Expand-Archive -Path "depends22_x64.zip" -DestinationPath "C:\dependency-walker"
-          echo "Dependency Walker downloaded and extracted."
-
-      - name: Place Dependency Walker in Nuitka Cache (Windows only)
-        if: runner.os == 'Windows'
-        run: |
-          # Ensure the directory exists
-          New-Item -Path "C:\Users\RUNNER~1\AppData\Local\Nuitka\Nuitka\Cache\DOWNLO~1\depends\x86_64" -ItemType Directory -Force
-          # Copy Dependency Walker to the required directory
-          Copy-Item -Path "C:\dependency-walker\depends.exe" -Destination "C:\Users\RUNNER~1\AppData\Local\Nuitka\Nuitka\Cache\DOWNLO~1\depends\x86_64"
-          echo "Dependency Walker placed in the required directory."
-
-      - name: Build on Linux/macOS
-        if: runner.os != 'Windows'
-        run: chmod +x build.sh && ./build.sh
-
-      - name: Build on Windows
-        if: runner.os == 'Windows'
-        run: .\build.bat
+      - name: Build with Nuitka (CI/CD)
+        uses: Nuitka/Nuitka-Action@v1
+        with:
+          python_version: "3.11"
+          targets: "convert.py"  # Replace with your script file
+          # Additional Nuitka options (you can adjust as needed)
+          # options: "--standalone --onefile --disable-ccache"
 
       - name: Upload Executable Artifact
         uses: actions/upload-artifact@v4
         with:
           name: convmusic-${{ runner.os }}-${{ matrix.architecture }}
+          path: build/convmusic*
+          if-no-files-found: error
+
+  manual_build:
+    runs-on: ${{ matrix.os }}
+    needs: build
+    if: github.event_name == 'workflow_dispatch'  # Triggered manually via 'workflow_dispatch'
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install Nuitka
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install nuitka
+
+      - name: Run Manual Build Script
+        run: |
+          if [ $RUNNER_OS == "Linux" ]; then
+            chmod +x build.sh && ./build.sh  # Linux/Mac
+          elif [ $RUNNER_OS == "Windows" ]; then
+            ./build.bat  # Windows
+          fi
+
+      - name: Upload Executable Artifact (Manual)
+        uses: actions/upload-artifact@v4
+        with:
+          name: manual-convmusic-${{ runner.os }}-${{ matrix.architecture }}
           path: build/convmusic*
           if-no-files-found: error
 
