@@ -38,7 +38,11 @@ jobs:
       - name: Rename Executable (Linux/macOS)
         if: runner.os == 'Linux' || runner.os == 'macOS'
         run: |
-          mv build/convert.bin build/convmusic
+          if [ $RUNNER_OS == "macOS" ]; then
+            mv build/convert.app/Contents/MacOS/convert build/convert.app/Contents/MacOS/convmusic
+          else
+            mv build/convert.bin build/convmusic
+          fi
 
       - name: Rename Executable (Windows)
         if: runner.os == 'Windows'
