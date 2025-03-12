@@ -1,0 +1,54 @@
+name: Build Python Program with Nuitka
+
+on:
+  push:
+    branches:
+      - main  # Trigger on pushes to 'main' branch
+  pull_request:
+    branches:
+      - main  # Trigger on PRs to 'main'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest  # You can adjust the OS to match your target platform
+
+    strategy:
+      matrix:
+        platform: [ubuntu-latest, macos-latest, windows-latest]  # Target platforms for the build
+
+    steps:
+      # Checkout the code
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9  # You can adjust the Python version as needed
+
+      # Install Nuitka
+      - name: Install Nuitka
+        run: |
+          python -m pip install --upgrade pip
+          pip install nuitka
+
+      # Compile the Python code using Nuitka
+      - name: Compile Python script to executable
+        run: |
+          nuitka --standalone --onefile your_script.py
+
+      # Upload the compiled executables as GitHub artifacts
+      - name: Upload Executable
+        uses: actions/upload-artifact@v2
+        with:
+          name: compiled-program
+          path: dist/your_script.exe  # Adjust the path based on your platform and output
+
+      # Optionally, create a GitHub release and upload the artifact
+      - name: Create GitHub release and upload executable
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/your_script.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
