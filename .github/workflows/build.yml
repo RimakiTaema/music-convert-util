@@ -45,7 +45,7 @@ jobs:
           if [[ "$RUNNER_OS" == "Windows" ]]; then
             mv build/convert.exe build/convmusic.exe
           else
-            mv build/convert build/convmusic
+            mv build/convert.bin build/convmusic
             chmod +x build/convmusic
           fi
         shell: bash
