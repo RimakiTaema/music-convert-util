@@ -8,5 +8,9 @@ git clone (myrepo)
 then
 ```shell
 chmod +x build.sh
+# Windows Style
+.\build.bat (powershell)
+build.bat (non Powershell)
+# Linux
 ./build.sh
 ```
