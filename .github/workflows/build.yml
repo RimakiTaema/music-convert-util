@@ -24,31 +24,42 @@ jobs:
             nuitka-version: main
             script-name: convert.py
 
-      # Rename and upload artifacts based on OS
-      - name: Rename and upload macOS Executable
+      # macOS Rename and upload
+      - name: Rename macOS Executable
         if: runner.os == 'macOS'
         run: |
           mv build/convert.app/Contents/MacOS/convert build/convert.app/Contents/MacOS/convmusic
+
+      - name: Upload macOS Executable
+        if: runner.os == 'macOS'
         uses: actions/upload-artifact@v4
         with:
           name: convmusic-macos-${{ matrix.architecture }}
           path: build/convmusic.app
           if-no-files-found: error
 
-      - name: Rename and upload Linux Executable
+      # Linux Rename and upload
+      - name: Rename Linux Executable
         if: runner.os == 'Linux'
         run: |
           mv build/convert.bin build/convmusic
+
+      - name: Upload Linux Executable
+        if: runner.os == 'Linux'
         uses: actions/upload-artifact@v4
         with:
           name: convmusic-linux-${{ matrix.architecture }}
           path: build/convmusic
           if-no-files-found: error
 
-      - name: Rename and upload Windows Executable
+      # Windows Rename and upload
+      - name: Rename Windows Executable
         if: runner.os == 'Windows'
         run: |
           mv build/convert.exe build/convmusic.exe
+
+      - name: Upload Windows Executable
+        if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4
         with:
           name: convmusic-windows-${{ matrix.architecture }}
