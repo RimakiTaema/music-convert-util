@@ -46,7 +46,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: convmusic-macos-${{ matrix.architecture }}
-          path: build/convert.app/Contents/MacOS/convmusic*  # Corrected path
+          path: build/convert.app/Contents/MacOS/convmusic
           if-no-files-found: error
 
       # Linux Rename and upload
@@ -60,7 +60,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: convmusic-linux-${{ matrix.architecture }}
-          path: build/convmusic  # Correct path for Linux
+          path: build/convmusic
           if-no-files-found: error
 
       # Windows Rename and upload
@@ -74,7 +74,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: convmusic-windows-${{ matrix.architecture }}
-          path: build/convmusic.exe  # Correct path for Windows
+          path: build/convmusic.exe
           if-no-files-found: error
 
   release:
@@ -87,15 +87,11 @@ jobs:
           path: artifacts/
 
       - name: Create GitHub Release
-        uses: comnoco/create-release-action@v2.0.5
+        uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          body: |
-            Changes in this Release
-            - Release V1
-          draft: false
-          prerelease: false
-          files: actions/*/**
+          tag_name: v1.0.${{ github.run_number }}  # Dynamic tag
+          release_name: 1.0.${{ github.run_number }}  # Dynamic release name
+          body: ""  # Let GitHub auto-generate the release body
+          files: artifacts/**/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
