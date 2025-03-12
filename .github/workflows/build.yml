@@ -1,69 +1,75 @@
-name: Build Python Executable with Nuitka
+name: Build and Release convmusic
 
 on:
   push:
     branches:
-      - main
+      - main  # Runs on pushes to the 'main' branch
   pull_request:
     branches:
-      - main
+      - main  # Runs on PRs to the 'main' branch
+
+  workflow_dispatch:  # Allows manual triggering
 
 jobs:
   build:
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-
-    runs-on: ${{ matrix.os }}
+        architecture: [x86_64, arm64]
+        exclude:
+          - os: windows-latest
+            architecture: arm64  # Windows ARM builds aren't widely supported
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v2
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
+          python-version: "3.11"  # Adjust as needed
 
       - name: Install Nuitka
-        run: pip install nuitka
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install nuitka
 
-      - name: Compile Python script with Nuitka
+      - name: Build with Nuitka
         run: |
           python -m nuitka --standalone --onefile --output-dir=build convert.py
+        shell: bash
 
-      - name: Rename output file (without .bin on Linux/macOS)
-        if: matrix.os != 'windows-latest'
+      - name: Rename Executable
         run: |
-          mv build/convert.bin build/convert
-
-      - name: Rename output file for Windows
-        if: matrix.os == 'windows-latest'
-        run: |
-          rename build\convert.exe convert.exe
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            mv build/convert.exe build/convmusic.exe
+          else
+            mv build/convert build/convmusic
+            chmod +x build/convmusic
+          fi
+        shell: bash
 
       - name: Upload Executable Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: compiled-program-${{ matrix.os }}
-          path: build/my_script*
+          name: convmusic-${{ runner.os }}-${{ matrix.architecture }}
+          path: |
+            build/convmusic*
+          if-no-files-found: error
 
   release:
     needs: build
     runs-on: ubuntu-latest
-
     steps:
-      - name: Download all artifacts
+      - name: Download Build Artifacts
         uses: actions/download-artifact@v4
         with:
-          path: artifacts
+          path: artifacts/
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v1
         with:
-          tag_name: v1.0.${{ github.run_number }}
-          name: "Release v1.0.${{ github.run_number }}"
-          body: "Automatically built release using Nuitka."
-          files: artifacts/**
+          files: artifacts/**/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
