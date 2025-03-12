@@ -29,18 +29,31 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Build with Nuitka (CI/CD)
+      # Use Docker for ARM64 Linux Builds
+      - name: Build for ARM64 on Linux using Docker
+        if: matrix.architecture == 'arm64' && runner.os == 'Linux'
+        run: |
+          docker run --rm --platform linux/arm64 -v $PWD:/app -w /app ubuntu bash -c "
+            apt update && apt install -y python3 python3-pip
+            pip install nuitka
+            nuitka --onefile convert.py
+          "
+          mv convert build/convmusic
+
+      # Regular x86_64 Build (No Docker)
+      - name: Build with Nuitka (CI/CD) for x86_64
+        if: matrix.architecture == 'x86_64'
         uses: Nuitka/Nuitka-Action@main
         with:
             nuitka-version: main
             script-name: convert.py
 
-      # macOS Rename, Archive, and Upload
+      # macOS Rename, Archive, and Upload (No .app)
       - name: Rename macOS Executable
         if: runner.os == 'macOS'
         run: |
-          mv build/convert.app/Contents/MacOS/convert build/convert.app/Contents/MacOS/convmusic
-          tar -czvf convmusic-macos-${{ matrix.architecture }}.tar.gz -C build convert.app
+          mv build/convert build/convmusic
+          tar -czvf convmusic-macos-${{ matrix.architecture }}.tar.gz -C build convmusic
 
       - name: Upload macOS Archive
         if: runner.os == 'macOS'
@@ -54,8 +67,8 @@ jobs:
       - name: Rename Linux Executable
         if: runner.os == 'Linux'
         run: |
-          mv build/convert.bin build/convmusic
-          tar -czvf convmusic-linux-${{ matrix.architecture }}.tar.gz -C build convmusic
+          mv build/convmusic build/convmusic-linux-${{ matrix.architecture }}
+          tar -czvf convmusic-linux-${{ matrix.architecture }}.tar.gz -C build convmusic-linux-${{ matrix.architecture }}
 
       - name: Upload Linux Archive
         if: runner.os == 'Linux'
