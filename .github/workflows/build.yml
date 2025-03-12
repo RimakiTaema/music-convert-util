@@ -40,6 +40,15 @@ jobs:
           echo "Downloading Dependency Walker..."
           Invoke-WebRequest -Uri "https://dependencywalker.com/depends22_x64.zip" -OutFile "depends22_x64.zip"
           Expand-Archive -Path "depends22_x64.zip" -DestinationPath "C:\dependency-walker"
+          echo "Dependency Walker downloaded and extracted to C:\dependency-walker"
+
+      - name: Set up Dependency Walker for Nuitka (Windows only)
+        if: runner.os == 'Windows'
+        run: |
+          # Force Nuitka to use Dependency Walker by setting the environment variable
+          $env:NuitkaCachePath = "C:\dependency-walker"
+          $env:PATH = "C:\dependency-walker" + ";" + $env:PATH
+          echo "Dependency Walker is set up and ready."
 
       - name: Build on Linux/macOS
         if: runner.os != 'Windows'
@@ -47,10 +56,7 @@ jobs:
 
       - name: Build on Windows
         if: runner.os == 'Windows'
-        run: |
-          # Set up the path for Nuitka to use Dependency Walker
-          $env:PATH = "C:\dependency-walker" + ";" + $env:PATH
-          .\build.bat
+        run: .\build.bat
 
       - name: Upload Executable Artifact
         uses: actions/upload-artifact@v4
