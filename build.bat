@@ -6,7 +6,7 @@ python -m pip install --upgrade pip
 python -m pip install nuitka
 
 :: Compile the Python script
-python -m nuitka --standalone --onefile --disable-ccache --no-dependency-walker --output-dir=build convert.py
+python -m nuitka --standalone --onefile --disable-ccache --output-dir=build convert.py
 
 :: Rename output file
 move build\convert.exe build\convmusic.exe
