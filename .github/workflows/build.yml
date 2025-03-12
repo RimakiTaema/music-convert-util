@@ -32,7 +32,6 @@ jobs:
       - name: Build with Nuitka (CI/CD)
         uses: Nuitka/Nuitka-Action@main
         with:
-          python_version: "3.11"
           targets: "convert.py"  # Replace with your script file
           # Additional Nuitka options (you can adjust as needed)
           # options: "--standalone --onefile --disable-ccache"
