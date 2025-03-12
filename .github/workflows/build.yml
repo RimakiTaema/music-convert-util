@@ -34,21 +34,22 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install nuitka
 
-      - name: Download Dependency Walker (Windows only)
+      - name: Download and Extract Dependency Walker (Windows only)
         if: runner.os == 'Windows'
         run: |
           echo "Downloading Dependency Walker..."
           Invoke-WebRequest -Uri "https://dependencywalker.com/depends22_x64.zip" -OutFile "depends22_x64.zip"
           Expand-Archive -Path "depends22_x64.zip" -DestinationPath "C:\dependency-walker"
-          echo "Dependency Walker downloaded and extracted to C:\dependency-walker"
+          echo "Dependency Walker downloaded and extracted."
 
-      - name: Set up Dependency Walker for Nuitka (Windows only)
+      - name: Place Dependency Walker in Nuitka Cache (Windows only)
         if: runner.os == 'Windows'
         run: |
-          # Force Nuitka to use Dependency Walker by setting the environment variable
-          $env:NuitkaCachePath = "C:\dependency-walker"
-          $env:PATH = "C:\dependency-walker" + ";" + $env:PATH
-          echo "Dependency Walker is set up and ready."
+          # Ensure the directory exists
+          New-Item -Path "C:\Users\RUNNER~1\AppData\Local\Nuitka\Nuitka\Cache\DOWNLO~1\depends\x86_64" -ItemType Directory -Force
+          # Copy Dependency Walker to the required directory
+          Copy-Item -Path "C:\dependency-walker\depends.exe" -Destination "C:\Users\RUNNER~1\AppData\Local\Nuitka\Nuitka\Cache\DOWNLO~1\depends\x86_64"
+          echo "Dependency Walker placed in the required directory."
 
       - name: Build on Linux/macOS
         if: runner.os != 'Windows'
