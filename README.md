@@ -3,7 +3,7 @@ The CLI Tool for converting music format easilly without doing ffmpeg stuff
 ## How to build
 setup repo
 ```shell
-git clone (myrepo)
+git clone https://github.com/RimakiTaema/music-convert-util.git
 ```
 then
 ```shell
