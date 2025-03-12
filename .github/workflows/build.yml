@@ -1,54 +1,69 @@
-name: Build Python Program with Nuitka
+name: Build Python Executable with Nuitka
 
 on:
   push:
     branches:
-      - main  # Trigger on pushes to 'main' branch
+      - main
   pull_request:
     branches:
-      - main  # Trigger on PRs to 'main'
+      - main
 
 jobs:
   build:
-    runs-on: ubuntu-latest  # You can adjust the OS to match your target platform
-
     strategy:
       matrix:
-        platform: [ubuntu-latest, macos-latest, windows-latest]  # Target platforms for the build
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    runs-on: ${{ matrix.os }}
 
     steps:
-      # Checkout the code
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      # Set up Python
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
-          python-version: 3.9  # You can adjust the Python version as needed
+          python-version: "3.11"
 
-      # Install Nuitka
       - name: Install Nuitka
+        run: pip install nuitka
+
+      - name: Compile Python script with Nuitka
         run: |
-          python -m pip install --upgrade pip
-          pip install nuitka
+          python -m nuitka --standalone --onefile --output-dir=build my_script.py
 
-      # Compile the Python code using Nuitka
-      - name: Compile Python script to executable
+      - name: Rename output file (without .bin on Linux/macOS)
+        if: matrix.os != 'windows-latest'
         run: |
-          nuitka --standalone --onefile your_script.py
+          mv build/my_script.bin build/my_script
 
-      # Upload the compiled executables as GitHub artifacts
-      - name: Upload Executable
-        uses: actions/upload-artifact@v2
-        with:
-          name: compiled-program
-          path: dist/your_script.exe  # Adjust the path based on your platform and output
+      - name: Rename output file for Windows
+        if: matrix.os == 'windows-latest'
+        run: |
+          rename build\my_script.exe my_script.exe
 
-      # Optionally, create a GitHub release and upload the artifact
-      - name: Create GitHub release and upload executable
-        uses: softprops/action-gh-release@v1
+      - name: Upload Executable Artifact
+        uses: actions/upload-artifact@v3
         with:
-          files: dist/your_script.exe
+          name: compiled-program-${{ matrix.os }}
+          path: build/my_script*
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: "Release v1.0.${{ github.run_number }}"
+          body: "Automatically built release using Nuitka."
+          files: artifacts/**
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
