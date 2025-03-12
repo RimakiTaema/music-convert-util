@@ -96,5 +96,6 @@ jobs:
             - Release V1
           draft: false
           prerelease: false
+          files: actions/*/**
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
