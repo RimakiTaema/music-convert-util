@@ -3,12 +3,11 @@ name: Build and Release convmusic
 on:
   push:
     branches:
-      - main  # Runs on pushes to the 'main' branch
+      - main
   pull_request:
     branches:
-      - main  # Runs on PRs to the 'main' branch
-
-  workflow_dispatch:  # Allows manual triggering
+      - main
+  workflow_dispatch:
 
 jobs:
   build:
@@ -19,7 +18,7 @@ jobs:
         architecture: [x86_64, arm64]
         exclude:
           - os: windows-latest
-            architecture: arm64  # Windows ARM builds aren't widely supported
+            architecture: arm64  # Windows ARM builds aren't well-supported
 
     steps:
       - name: Checkout Code
@@ -28,34 +27,33 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.11"  # Adjust as needed
+          python-version: "3.11"
 
       - name: Install Nuitka
         run: |
           python -m pip install --upgrade pip
           python -m pip install nuitka
 
-      - name: Build with Nuitka
+      - name: Download Dependency Walker (Windows Only)
+        if: runner.os == 'Windows'
         run: |
-          python -m nuitka --standalone --onefile --disable-ccache --output-dir=build convert.py
-        shell: bash
+          Invoke-WebRequest -Uri "https://github.com/Nuitka/DependnecyWalker/releases/latest/download/depends.exe" -OutFile "$env:TEMP\depends.exe"
+          New-Item -ItemType Directory -Path "$env:LocalAppData\Nuitka\Nuitka\Cache\downloads\depends\x86_64" -Force
+          Move-Item -Path "$env:TEMP\depends.exe" -Destination "$env:LocalAppData\Nuitka\Nuitka\Cache\downloads\depends\x86_64\depends.exe"
 
-      - name: Rename Executable
-        run: |
-          if [[ "$RUNNER_OS" == "Windows" ]]; then
-            mv build/convert.exe build/convmusic.exe
-          else
-            mv build/convert.bin build/convmusic
-            chmod +x build/convmusic
-          fi
-        shell: bash
+      - name: Build on Linux/macOS
+        if: runner.os != 'Windows'
+        run: chmod +x build.sh && ./build.sh
+
+      - name: Build on Windows
+        if: runner.os == 'Windows'
+        run: build.bat
 
       - name: Upload Executable Artifact
         uses: actions/upload-artifact@v4
         with:
           name: convmusic-${{ runner.os }}-${{ matrix.architecture }}
-          path: |
-            build/convmusic*
+          path: build/convmusic*
           if-no-files-found: error
 
   release:
