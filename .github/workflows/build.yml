@@ -32,10 +32,9 @@ jobs:
       - name: Build with Nuitka (CI/CD)
         uses: Nuitka/Nuitka-Action@main
         with:
-          targets: "convert.py"  # Replace with your script file
-          # Additional Nuitka options (you can adjust as needed)
-          # options: "--standalone --onefile --disable-ccache"
-
+            nuitka-version: main
+            script-name: convert
+            mode: app
       - name: Upload Executable Artifact
         uses: actions/upload-artifact@v4
         with:
