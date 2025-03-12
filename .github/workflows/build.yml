@@ -7,7 +7,7 @@ on:
   pull_request:
     branches:
       - main
-  workflow_dispatch:
+  workflow_dispatch:  # This will allow manual trigger
 
 jobs:
   build:
@@ -34,7 +34,17 @@ jobs:
         with:
             nuitka-version: main
             script-name: convert.py
-            mode: app
+
+      - name: Rename Executable (Linux/macOS)
+        if: runner.os == 'Linux' || runner.os == 'macOS'
+        run: |
+          mv build/convert.bin build/convmusic
+
+      - name: Rename Executable (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          rename build\convert.exe convmusic.exe
+
       - name: Upload Executable Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -45,7 +55,7 @@ jobs:
   manual_build:
     runs-on: ${{ matrix.os }}
     needs: build
-    if: github.event_name == 'workflow_dispatch'  # Triggered manually via 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch'  # This ensures that the manual build only runs on manual trigger
     steps:
       - name: Checkout Code
         uses: actions/checkout@v2
