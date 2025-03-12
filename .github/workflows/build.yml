@@ -35,7 +35,7 @@ jobs:
             nuitka-version: main
             script-name: convert.py
 
-      # macOS Rename and upload
+      # macOS Rename and Upload
       - name: Rename macOS Executable
         if: runner.os == 'macOS'
         run: |
@@ -49,7 +49,7 @@ jobs:
           path: build/convert.app/Contents/MacOS/convmusic
           if-no-files-found: error
 
-      # Linux Rename and upload
+      # Linux Rename and Upload
       - name: Rename Linux Executable
         if: runner.os == 'Linux'
         run: |
@@ -63,7 +63,7 @@ jobs:
           path: build/convmusic
           if-no-files-found: error
 
-      # Windows Rename and upload
+      # Windows Rename and Upload
       - name: Rename Windows Executable
         if: runner.os == 'Windows'
         run: |
@@ -80,6 +80,8 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Ensure token has write access
     steps:
       - name: Download Build Artifacts
         uses: actions/download-artifact@v4
@@ -89,9 +91,9 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v1.0.${{ github.run_number }}  # Dynamic tag
-          release_name: 1.0.${{ github.run_number }}  # Dynamic release name
-          body: ""  # Let GitHub auto-generate the release body
+          tag_name: v1.0.${{ github.run_number }}
+          name: 1.0.${{ github.run_number }}  # Corrected key
           files: artifacts/**/*
+          generate_release_notes: true  # Let GitHub auto-generate release notes
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
