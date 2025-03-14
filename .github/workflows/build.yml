@@ -46,8 +46,8 @@ jobs:
       - name: Rename macOS Executable
         if: runner.os == 'macOS'
         run: |
-          mv build/convmusic.app/Contents/MacOS/convmusic build/convmusic.app/Contents/MacOS/convmusic
-          tar -czvf convmusic-macos-${{ matrix.architecture }}.tar.gz -C build convmusic.app
+          mv build/convmusic build/convmusic-macos
+          tar -czvf convmusic-macos-${{ matrix.architecture }}.tar.gz -C build convmusic-macos
 
       - name: Upload macOS Archive
         if: runner.os == 'macOS'
