@@ -67,7 +67,7 @@ jobs:
               convert.py
           
           # Rename output
-          RUN mv /app/build/convert.bin /app/build/convmusic
+          RUN mv /app/build/convert.dist/convert.bin /app/build/convmusic
           EOF
           
           # Build Docker image with buildx for correct architecture
