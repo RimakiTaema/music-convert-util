@@ -32,17 +32,39 @@ jobs:
           python-version: "3.11"
 
       # Set up Docker for Linux and macOS
-      - name: Set up Docker
-        if: runner.os != 'Windows'
-        uses: docker/setup-buildx-action@v1
+      - name: Set up Docker for Linux
+        if: runner.os == 'Linux'
+        uses: actions/setup-docker@v2
 
-      # Build with Docker + Nuitka for Linux and macOS
-      - name: Build with Docker and Nuitka for Linux and macOS
-        if: runner.os != 'Windows'
+      # Set up Docker for macOS (different approach as it's less reliable)
+      - name: Set up Docker for macOS
+        if: runner.os == 'macOS'
         run: |
-          # Create a Dockerfile on the fly
+          # MacOS runners come with Docker pre-installed but not started
+          brew install docker
+          colima start
+          
+          # Wait for Docker daemon to be available
+          timeout=60
+          while ! docker info > /dev/null 2>&1; do
+            if [ $timeout -le 0 ]; then
+              echo "Timed out waiting for Docker daemon"
+              exit 1
+            fi
+            echo "Waiting for Docker daemon to be available... ($timeout seconds left)"
+            sleep 5
+            timeout=$((timeout - 5))
+          done
+          
+          echo "Docker is ready"
+
+      # Build with Docker + Nuitka for Linux
+      - name: Build with Docker and Nuitka for Linux
+        if: runner.os == 'Linux'
+        run: |
+          # Create a Dockerfile for Linux
           cat > Dockerfile << EOF
-          FROM --platform=\$BUILDPLATFORM python:3.11-slim
+          FROM python:3.11-slim
           
           # Install system dependencies for Nuitka
           RUN apt-get update && apt-get install -y \
@@ -70,16 +92,61 @@ jobs:
           RUN mv /app/build/convert.bin /app/build/convmusic
           EOF
           
-          # Set platform variable based on OS and architecture
-          PLATFORM="linux/${{ matrix.architecture }}"
-          if [[ "${{ runner.os }}" == "macOS" ]]; then
-            PLATFORM="darwin/${{ matrix.architecture }}"
-          fi
+          # Build Docker image
+          docker build -t convmusic:linux-${{ matrix.architecture }} .
           
-          # Build Docker image with buildx for correct architecture
-          docker buildx build --platform $PLATFORM \
-            --output type=local,dest=./build \
-            -t convmusic:${{ matrix.os }}-${{ matrix.architecture }} .
+          # Create output directory
+          mkdir -p build
+          
+          # Run container to copy the build artifacts
+          docker create --name extract convmusic:linux-${{ matrix.architecture }}
+          docker cp extract:/app/build/convmusic ./build/
+          docker rm extract
+
+      # Build with Docker + Nuitka for macOS
+      - name: Build with Docker and Nuitka for macOS
+        if: runner.os == 'macOS'
+        run: |
+          # Create a Dockerfile for macOS
+          cat > Dockerfile << EOF
+          FROM python:3.11-slim
+          
+          # Install system dependencies for Nuitka
+          RUN apt-get update && apt-get install -y \
+              build-essential \
+              ccache \
+              patchelf \
+              python3-dev \
+              git
+          
+          # Install Nuitka
+          RUN pip install nuitka==1.9.3
+          
+          WORKDIR /app
+          COPY . /app
+          
+          # Build with Nuitka
+          RUN python -m nuitka \
+              --standalone \
+              --assume-yes-for-downloads \
+              --follow-imports \
+              --output-dir=/app/build \
+              convert.py
+          
+          # Rename output
+          RUN mv /app/build/convert.bin /app/build/convmusic
+          EOF
+          
+          # Build Docker image
+          docker build -t convmusic:macos-${{ matrix.architecture }} .
+          
+          # Create output directory
+          mkdir -p build
+          
+          # Run container to copy the build artifacts
+          docker create --name extract convmusic:macos-${{ matrix.architecture }}
+          docker cp extract:/app/build/convmusic ./build/
+          docker rm extract
 
       # Windows uses Nuitka directly (unchanged)
       - name: Build with Nuitka on Windows
