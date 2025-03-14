@@ -106,12 +106,13 @@ jobs:
           path: convmusic-linux-${{ matrix.architecture }}.tar.gz
           if-no-files-found: error
 
-      # macOS Rename, Archive, and Upload
+      # macOS Rename, Archive, and Upload - Updated path
       - name: Rename macOS Executable
         if: runner.os == 'macOS'
         run: |
-          mv build/convert build/convmusic-macos
-          tar -czvf convmusic-macos-${{ matrix.architecture }}.tar.gz -C build convmusic-macos
+          mkdir -p build/output
+          cp build/convert.app/Contents/MacOS/convert build/output/convmusic-macos
+          tar -czvf convmusic-macos-${{ matrix.architecture }}.tar.gz -C build/output convmusic-macos
 
       - name: Upload macOS Archive
         if: runner.os == 'macOS'
