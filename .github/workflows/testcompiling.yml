@@ -1,0 +1,34 @@
+name: Test Compiling
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        architecture: [x86_64, arm64]
+        exclude:
+          - os: windows-latest
+            architecture: arm64  # Windows ARM builds aren't well-supported
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # Linux and macOS use build.sh
+      - name: Run build script for macOS and Linux
+        if: runner.os != 'Windows'
+        run: chmod +x build.sh && ./build.sh
+
+      # Windows uses Nuitka directly
+      - name: Build with Nuitka on Windows
+        if: runner.os == 'Windows'
+        run: .\build.bat
