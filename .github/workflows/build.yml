@@ -95,9 +95,9 @@ jobs:
       - name: Rename Linux Executable
         if: runner.os == 'Linux'
         run: |
-          mv build/convmusic build/convmusic-linux
+          mv build/app/build/convmusic build/convmusic-linux
           tar -czvf convmusic-linux-${{ matrix.architecture }}.tar.gz -C build convmusic-linux
-
+          
       - name: Upload Linux Archive
         if: runner.os == 'Linux'
         uses: actions/upload-artifact@v4
