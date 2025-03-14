@@ -24,21 +24,21 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v2
 
-      # Set up for Windows build (unchanged)
-      - name: Set up Python for Windows
-        if: runner.os == 'Windows'
+      # Set up Python for Windows and macOS
+      - name: Set up Python for Windows and macOS
+        if: runner.os == 'Windows' || runner.os == 'macOS'
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      # Set up Docker for Linux and macOS - using the correct action
+      # Set up Docker for Linux only
       - name: Set up Docker Buildx
-        if: runner.os != 'Windows'
+        if: runner.os == 'Linux'
         uses: docker/setup-buildx-action@v2
 
-      # Build with Docker + Nuitka for Linux and macOS
-      - name: Build with Docker and Nuitka for Linux and macOS
-        if: runner.os != 'Windows'
+      # Build with Docker + Nuitka for Linux
+      - name: Build with Docker and Nuitka for Linux
+        if: runner.os == 'Linux'
         run: |
           # Create a Dockerfile on the fly
           cat > Dockerfile << EOF
@@ -70,16 +70,10 @@ jobs:
           RUN mv /app/build/convert.bin /app/build/convmusic
           EOF
           
-          # Set platform variable based on OS and architecture
-          PLATFORM="linux/${{ matrix.architecture }}"
-          if [[ "${{ runner.os }}" == "macOS" ]]; then
-            PLATFORM="darwin/${{ matrix.architecture }}"
-          fi
-          
           # Build Docker image with buildx for correct architecture
-          docker buildx build --platform $PLATFORM \
+          docker buildx build --platform linux/${{ matrix.architecture }} \
             --output type=local,dest=./build \
-            -t convmusic:${{ matrix.os }}-${{ matrix.architecture }} .
+            -t convmusic:linux-${{ matrix.architecture }} .
 
       # Windows uses Nuitka directly (unchanged)
       - name: Build with Nuitka on Windows
@@ -89,20 +83,13 @@ jobs:
           nuitka-version: main
           script-name: convert.py
 
-      # macOS Rename, Archive, and Upload
-      - name: Rename macOS Executable
+      # macOS uses Nuitka directly (same as Windows)
+      - name: Build with Nuitka on macOS
         if: runner.os == 'macOS'
-        run: |
-          mv build/convmusic build/convmusic-macos
-          tar -czvf convmusic-macos-${{ matrix.architecture }}.tar.gz -C build convmusic-macos
-
-      - name: Upload macOS Archive
-        if: runner.os == 'macOS'
-        uses: actions/upload-artifact@v4
+        uses: Nuitka/Nuitka-Action@main
         with:
-          name: convmusic-macos-${{ matrix.architecture }}
-          path: convmusic-macos-${{ matrix.architecture }}.tar.gz
-          if-no-files-found: error
+          nuitka-version: main
+          script-name: convert.py
 
       # Linux Rename, Archive, and Upload
       - name: Rename Linux Executable
@@ -117,6 +104,21 @@ jobs:
         with:
           name: convmusic-linux-${{ matrix.architecture }}
           path: convmusic-linux-${{ matrix.architecture }}.tar.gz
+          if-no-files-found: error
+
+      # macOS Rename, Archive, and Upload
+      - name: Rename macOS Executable
+        if: runner.os == 'macOS'
+        run: |
+          mv build/convert build/convmusic-macos
+          tar -czvf convmusic-macos-${{ matrix.architecture }}.tar.gz -C build convmusic-macos
+
+      - name: Upload macOS Archive
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: convmusic-macos-${{ matrix.architecture }}
+          path: convmusic-macos-${{ matrix.architecture }}.tar.gz
           if-no-files-found: error
 
       # Windows Rename, Archive, and Upload (unchanged)
